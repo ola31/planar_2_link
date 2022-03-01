@@ -75,6 +75,7 @@ struct End_point getPresentXY(void);
 void read_dxl_postion(void);
 
 void set_EP_goal(double x, double y);
+void print_info(void);
 
 
 

@@ -83,6 +83,9 @@ void *p_function(void * data)
   presentXY_fromFK = getPresentXY();
   present_posi = presentXY_fromFK;
 
+  target_goal.x = 0.0;
+  target_goal.y = 0.15;
+
   static struct timespec next_time;
   clock_gettime(CLOCK_MONOTONIC,&next_time);
 
@@ -103,9 +106,6 @@ void clear_param(void);
 void process(void){
 
   static struct Joint J_goal;              //joint goal from IK
-
-  target_goal.x = 0.0;
-  target_goal.y = 0.15;
 
   if(t<=T){
     is_running = true;
@@ -129,13 +129,14 @@ void process(void){
     //do nothing
   }
 
-  ROS_WARN("FK_X(cm) : %lf, FK_Y(cm) : %lf ",100.0*presentXY_fromFK.x, (100.0)*presentXY_fromFK.y);
+  //ROS_WARN("FK_X(cm) : %lf, FK_Y(cm) : %lf ",100.0*presentXY_fromFK.x, (100.0)*presentXY_fromFK.y);
 
   set_dxl_goal(radian_to_tick1(J_goal.TH1),radian_to_tick2(J_goal.TH2));
   dxl_go();
   clear_param();
 
-  ROS_INFO("dxl1 : %d  dxl2: %d",present_dxl1_posi, present_dxl2_posi);
+  //ROS_INFO("dxl1 : %d  dxl2: %d",present_dxl1_posi, present_dxl2_posi);
+  print_info();
 
 }
 
@@ -143,6 +144,7 @@ void set_EP_goal(double x, double y){
 
   if(is_running)
     if(abs(x - target_goal.x > 0.001) || abs(y - target_goal.y) > 0.001){ //different goal
+      ROS_WARN("New goal command recieved");
       present_posi = traj_goal;
       t = 0;
       target_goal.x = x;
@@ -309,5 +311,20 @@ void dxl_add_param(void){
     fprintf(stderr, "[ID:%03d] groupSyncRead addparam failed", DXL2_ID);
   }
 
+
+}
+
+void print_info(void){
+  printf("-----------------------------------\n");
+  printf("\n");
+  printf("Target_Goal(X) : %lf\n",target_goal.x);
+  printf("Target_Goal(Y) : %lf\n",target_goal.y);
+  printf("\n");
+  printf("Traj_goal(X) : %lf\n",traj_goal.x);
+  printf("Traj_goal(Y) : %lf\n",traj_goal.y);
+  printf("\n");
+  printf("time : %d / %d \n",(int)t,(int)T);
+  printf("\n");
+  printf("-----------------------------------\n");
 
 }
