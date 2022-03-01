@@ -1,7 +1,13 @@
+/*********************************************************************
+ * This <test_thread> package is example code of planar two-link arm
+ * using pthread and dynamixel sdk
+ * author : ola31
+ * Fab, 2022
+ * ******************************************************************/
+
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "test_thread/test_thread_node.h"
-
 
 extern bool is_run;
 
@@ -23,7 +29,7 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
   else{
-    ROS_INFO("pthread start...")
+    ROS_INFO("pthread start...");
   }
   sleep(1);
 

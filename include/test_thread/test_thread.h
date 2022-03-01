@@ -56,6 +56,7 @@ struct Joint
 void *p_function(void * data);
 void process(void);
 void dxl_add_param(void);
+void dxls_torque_on(void);
 void dxl_initailize(void);
 void set_dxl_goal(int dxl_1_posi, int dxl_2_posi);
 void dxl_go(void);

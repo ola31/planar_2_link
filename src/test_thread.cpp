@@ -71,13 +71,11 @@ void *p_function(void * data)
   presentXY_fromFK = getPresentXY();
 
   static struct timespec next_time;
-  //static struct timespec curr_time;
-
   clock_gettime(CLOCK_MONOTONIC,&next_time);
 
 
-  while(is_run)
-  {
+  while(is_run){
+
     next_time.tv_sec += (next_time.tv_nsec + Control_Cycle * 1000000) / 1000000000;
     next_time.tv_nsec = (next_time.tv_nsec + Control_Cycle * 1000000) % 1000000000;
 
@@ -110,10 +108,6 @@ void process(void){
 
     J_goal = Compute_IK(traj_goal);
 
-   // set_dxl_goal(radian_to_tick1(J_goal.TH1),radian_to_tick2(J_goal.TH2));
-   // dxl_go();
-   // groupSyncWrite.clearParam();
-
     t+=dt;
   }
   else{
@@ -123,37 +117,26 @@ void process(void){
     //do nothing
   }
 
-  //read_dxl_postion();
-  //presentXY_fromFK = getPresentXY();
   ROS_WARN("FK_X(cm) : %lf, FK_Y(cm) : %lf ",100.0*presentXY_fromFK.x, (100.0)*presentXY_fromFK.y);
 
+  set_dxl_goal(radian_to_tick1(J_goal.TH1),radian_to_tick2(J_goal.TH2));
+  dxl_go();
+  clear_param();
 
-
-
-  //J_goal = Compute_IK(traj_goal);
-  //int mot1_tick = radian_to_tick1(J_goal.TH1);
-  //int mot2_tick = radian_to_tick2(J_goal.TH2);
-
-   set_dxl_goal(radian_to_tick1(J_goal.TH1),radian_to_tick2(J_goal.TH2));
-   dxl_go();
-   clear_param();
-
-   //set_dxl_goal(mot1_tick,mot2_tick);
-  //dxl_go();
-    ROS_INFO("dxl1 : %d  dxl2: %d",present_dxl1_posi, present_dxl2_posi);
-  //groupSyncWrite.clearParam();
+  ROS_INFO("dxl1 : %d  dxl2: %d",present_dxl1_posi, present_dxl2_posi);
 
 }
 
 
-
-
+void dxls_torque_on(void){
+  dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL1_ID, ADDR_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
+  dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL2_ID, ADDR_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
+}
 
 void dxl_initailize(void){  //open port, set baud, torque on dxl 1,2
   portHandler->openPort();
   portHandler->setBaudRate(BAUDRATE);
-  dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL1_ID, ADDR_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
-  dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL2_ID, ADDR_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
+  dxls_torque_on();
 
   dxl_add_param();
 }
@@ -208,22 +191,6 @@ struct Joint Compute_IK(struct End_point EP){
 
   //ROS_INFO("th1 : %f, th2 : %f",th1,th2);
   return J;
-/*
-  double x = EP.x;
-  double y = EP.y;
-
-  double c2 = (x*x + y*y - L1*L1 - L2*L2)/(2*L1*L2);
-  double s2 = sqrt(1-c2*c2);
-  double th2 = atan2(s2,c2);
-  double th1 = atan2(y,x) - atan2(L1+L2*c2,L2*s2);
-
-  printf("%f , %f\n",th1, th2);
-
-  struct Joint J;
-  J.TH1 = th1;
-  J.TH2 = th2;
-  return J;
-  */
 }
 
 struct End_point Compute_FK(struct Joint J){
@@ -260,8 +227,8 @@ int radian_to_tick2(double radian){
 }
 
 double tick_to_radian_1(int tick){
-   double radian = (PI/(double)2048)*(tick+1024);
-   return radian;
+  double radian = (PI/(double)2048)*(tick+1024);
+  return radian;
 }
 
 double tick_to_radian_2(int tick){
