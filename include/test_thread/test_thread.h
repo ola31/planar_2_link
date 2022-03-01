@@ -1,6 +1,15 @@
 #ifndef TEST_THREAD_H
 #define TEST_THREAD_H
 
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+
+#include <pthread.h>
+#include <unistd.h>
+#include <time.h>
+#include <math.h>
+#include "dynamixel_sdk/dynamixel_sdk.h"
+
 
 
 //Hardware Info
@@ -23,26 +32,16 @@
 #define LEN_PRO_GOAL_POSITION            4
 #define LEN_PRO_PRESENT_POSITION         4
 
-//math constants
-#define PI 3.141592
-double R2D = 180.0/3.141592;
-double D2R = 3.141592/180.0;
-
-uint8_t dxl_error = 0;
-//int dxl_goal_position[2] = {0,2000};
-int dxl_comm_result = COMM_TX_FAIL;
-
-bool dxl_addparam_result = false;                // addParam result
-bool dxl_getdata_result = false;                 // GetParam result
 
 
+/*********************
+ * Structures
+ * *******************/
 struct End_point
 {
   double x = 0.0;
   double y = 0.0;
 };
-
-
 
 struct Joint
 {
@@ -51,10 +50,10 @@ struct Joint
 };
 
 
-struct End_point presentXY_fromFK;
-
-
-//functions
+/*************************************************
+ * Functions
+ * ***********************************************/
+void *p_function(void * data);
 void process(void);
 void dxl_add_param(void);
 void dxl_initailize(void);
@@ -68,6 +67,9 @@ double tick_to_radian_1(int tick);
 double tick_to_radian_2(int tick);
 struct End_point getPresentXY(void);
 void read_dxl_postion(void);
+void clear_param(void);
+
+
 
 
 #endif // TEST_THREAD_H
