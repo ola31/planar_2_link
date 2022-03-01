@@ -53,22 +53,28 @@ struct Joint
 /*************************************************
  * Functions
  * ***********************************************/
-void *p_function(void * data);
-void process(void);
+void *p_function(void * data);   //fuction started when pthread is created
+void process(void);              //fuction running in loop
+
 void dxl_add_param(void);
 void dxls_torque_on(void);
 void dxl_initailize(void);
 void set_dxl_goal(int dxl_1_posi, int dxl_2_posi);
 void dxl_go(void);
+void clear_param(void);
+
 struct Joint Compute_IK(struct End_point EP);
 struct End_point Compute_FK(struct Joint J);
+
 int radian_to_tick1(double radian);
 int radian_to_tick2(double radian);
 double tick_to_radian_1(int tick);
 double tick_to_radian_2(int tick);
+
 struct End_point getPresentXY(void);
 void read_dxl_postion(void);
-void clear_param(void);
+
+void set_EP_goal(double x, double y);
 
 
 

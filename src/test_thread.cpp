@@ -36,9 +36,16 @@ double dt = 10; //ms
 double T = 3000; //ms
 
 //goals
-int present_posi = 0;
+int present_posi_ = 0;
 int goal_posi = 1000;
 int target_posi = 0;
+
+/*******************************************************
+ * 1-cos target_goal, trajectory goal, present End point
+ *******************************************************/
+static struct End_point target_goal;     //target goal
+static struct End_point traj_goal;       //trajectory goal
+static struct End_point present_posi;    //present end point position
 
 
 /*************************************
@@ -58,6 +65,11 @@ struct End_point presentXY_fromFK;
 bool is_run = true;
 int Control_Cycle = 10; //ms
 
+/***********************
+ * robot state
+ * *********************/
+bool is_running = false;
+
 
 
 void *p_function(void * data)
@@ -69,6 +81,7 @@ void *p_function(void * data)
 
   read_dxl_postion();
   presentXY_fromFK = getPresentXY();
+  present_posi = presentXY_fromFK;
 
   static struct timespec next_time;
   clock_gettime(CLOCK_MONOTONIC,&next_time);
@@ -85,32 +98,31 @@ void *p_function(void * data)
 
   }
 }
-
+void clear_param(void);
 
 void process(void){
 
-  static struct End_point target_goal;     //target goal
-  static struct End_point traj_goal;       //trajectory goal
-  static struct End_point present_posi;    //present end point position
-  present_posi = presentXY_fromFK;
   static struct Joint J_goal;              //joint goal from IK
-
 
   target_goal.x = 0.0;
   target_goal.y = 0.15;
 
   if(t<=T){
-    //traj_goal.x = present_posi.x + (target_goal.x - present_posi.x) * 0.5*(1-cos(PI*(t/T)));
-    //traj_goal.y = present_posi.y + (target_goal.y - present_posi.y) * 0.5*(1-cos(PI*(t/T)));
+    is_running = true;
 
-    traj_goal.x = 0.05*cos(2*PI*(t/T));
-    traj_goal.y = 0.05*sin(2*PI*(t/T))+0.1;
+    traj_goal.x = present_posi.x + (target_goal.x - present_posi.x) * 0.5*(1-cos(PI*(t/T)));
+    traj_goal.y = present_posi.y + (target_goal.y - present_posi.y) * 0.5*(1-cos(PI*(t/T)));
+
+    //traj_goal.x = 0.05*cos(2*PI*(t/T));
+    //traj_goal.y = 0.05*sin(2*PI*(t/T))+0.1;
 
     J_goal = Compute_IK(traj_goal);
 
     t+=dt;
   }
   else{
+    is_running = false;
+    traj_goal = traj_goal;
     //t = 0;
     //target_goal = present_posi;
 
@@ -127,10 +139,29 @@ void process(void){
 
 }
 
+void set_EP_goal(double x, double y){
+
+  if(is_running)
+    if(abs(x - target_goal.x > 0.001) || abs(y - target_goal.y) > 0.001){ //different goal
+      present_posi = traj_goal;
+      t = 0;
+      target_goal.x = x;
+      target_goal.y = y;
+    }
+    else return;
+  else{
+    present_posi = target_goal; //present_posi = pre target_goal
+    target_goal.x = x;          //update target goal
+    target_goal.y = y;
+    t = 0;
+  }
+}
+
 
 void dxls_torque_on(void){
   dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL1_ID, ADDR_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
   dxl_comm_result = packetHandler->write1ByteTxRx(portHandler, DXL2_ID, ADDR_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
+
 }
 
 void dxl_initailize(void){  //open port, set baud, torque on dxl 1,2

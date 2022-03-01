@@ -8,8 +8,25 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "test_thread/test_thread_node.h"
+#include "geometry_msgs/Point32.h"
 
 extern bool is_run;
+
+//Initial position
+//(robot will move to this position when start)
+double init_pose_x = 0.0;
+double init_posi_y = 1.0;
+
+
+double Ep_x = init_pose_x;
+double Ep_y = init_posi_y;
+
+void endpoint_xy_Callback(const geometry_msgs::Point32::ConstPtr& msg)
+{
+  Ep_x = msg->x;
+  Ep_y = msg->y;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -34,10 +51,13 @@ int main(int argc, char **argv)
   sleep(1);
 
   ros::Publisher chatter_pub = nh.advertise<std_msgs::String>("chatter", 1000);
+  ros::Subscriber sub = nh.subscribe("/endpoint_xy", 1000, endpoint_xy_Callback);
 
   ros::Rate loop_rate(10);
   while (ros::ok())
   {
+    set_EP_goal(Ep_x,Ep_y);
+
     std_msgs::String msg;
     msg.data = "hello world";
 
