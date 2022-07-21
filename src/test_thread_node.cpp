@@ -13,6 +13,13 @@ int present_dxl2_posi = 0;
 
 uint8_t param_goal_position[4];
 
+static struct End_point target_goal;     //target goal
+static struct End_point traj_goal;       //trajectory goal
+static struct End_point present_posi;    //present end point position
+
+struct End_point presentXY_fromFK;
+
+
 //Declare object
 dynamixel::PortHandler *portHandler = dynamixel::PortHandler::getPortHandler(DEVICENAME);
 dynamixel::PacketHandler *packetHandler = dynamixel::PacketHandler::getPacketHandler(PROTOCOL_VERSION);
@@ -22,8 +29,6 @@ dynamixel::GroupSyncWrite groupSyncWrite(portHandler, packetHandler, ADDR_GOAL_P
 dynamixel::GroupSyncRead groupSyncRead(portHandler, packetHandler, ADDR_PRESENT_POSITION, LEN_PRO_PRESENT_POSITION);
 
 
-double i = 0;
-
 bool is_run = true;
 int Control_Cycle = 10; //ms
 
@@ -32,53 +37,20 @@ double t = 0;
 double dt = 10; //ms
 double T = 3000; //ms
 
-//goals
-int present_posi = 0;
-int goal_posi = 1000;
-int target_posi = 0;
-
-/*
-struct End_point
-{
-  double x = 0.0;
-  double y = 0.0;
-};
-
-
-
-struct Joint
-{
-  double TH1 = 0.0;
-  double TH2 = 0.0;
-};
-
-*/
-
 
 void process(void){
 
-  static struct End_point target_goal;     //target goal
-  static struct End_point traj_goal;       //trajectory goal
-  static struct End_point present_posi;    //present end point position
-  present_posi = presentXY_fromFK;
   static struct Joint J_goal;              //joint goal from IK
-
+  present_posi = presentXY_fromFK;
 
   target_goal.x = 0.0;
   target_goal.y = 0.15;
 
   if(t<=T){
-    //traj_goal.x = present_posi.x + (target_goal.x - present_posi.x) * 0.5*(1-cos(PI*(t/T)));
-    //traj_goal.y = present_posi.y + (target_goal.y - present_posi.y) * 0.5*(1-cos(PI*(t/T)));
-
-    traj_goal.x = 0.05*cos(2*PI*(t/T));
-    traj_goal.y = 0.05*sin(2*PI*(t/T))+0.1;
+    traj_goal.x = present_posi.x + (target_goal.x - present_posi.x) * 0.5*(1-cos(PI*(t/T)));
+    traj_goal.y = present_posi.y + (target_goal.y - present_posi.y) * 0.5*(1-cos(PI*(t/T)));
 
     J_goal = Compute_IK(traj_goal);
-
-   // set_dxl_goal(radian_to_tick1(J_goal.TH1),radian_to_tick2(J_goal.TH2));
-   // dxl_go();
-   // groupSyncWrite.clearParam();
 
     t+=dt;
   }
@@ -89,26 +61,15 @@ void process(void){
     //do nothing
   }
 
-  //read_dxl_postion();
-  //presentXY_fromFK = getPresentXY();
-  ROS_WARN("FK_X(cm) : %lf, FK_Y(cm) : %lf ",100.0*presentXY_fromFK.x, (100.0)*presentXY_fromFK.y);
-
-
-
-
-  //J_goal = Compute_IK(traj_goal);
-  //int mot1_tick = radian_to_tick1(J_goal.TH1);
-  //int mot2_tick = radian_to_tick2(J_goal.TH2);
 
    set_dxl_goal(radian_to_tick1(J_goal.TH1),radian_to_tick2(J_goal.TH2));
    dxl_go();
    groupSyncWrite.clearParam();
 
-   //set_dxl_goal(mot1_tick,mot2_tick);
-  //dxl_go();
-    ROS_INFO("dxl1 : %d  dxl2: %d",present_dxl1_posi, present_dxl2_posi);
-  //groupSyncWrite.clearParam();
 
+   ROS_INFO("goal1 : %lf, goal2 : %lf",traj_goal.x,traj_goal.y);
+   //ROS_INFO("j1 : %d,j2 : %d",radian_to_tick1(J_goal.TH1),radian_to_tick2(J_goal.TH2));
+   ROS_INFO("j1 : %lf,j2 : %lf",J_goal.TH1, J_goal.TH2);
 }
 
 
@@ -177,7 +138,6 @@ int main(int argc, char **argv)
   is_run = false;
   return 0;
 
-
 }
 
 
@@ -218,7 +178,7 @@ void dxl_go(void){
 
 struct Joint Compute_IK(struct End_point EP){
 
-  //IK soluttion
+  //IK solution
   double x = EP.x;
   double y = EP.y;
   double alpha = atan2(y,x);
@@ -235,24 +195,8 @@ struct Joint Compute_IK(struct End_point EP){
   J.TH1 = th1;
   J.TH2 = th2;
 
-  //ROS_INFO("th1 : %f, th2 : %f",th1,th2);
   return J;
-/*
-  double x = EP.x;
-  double y = EP.y;
 
-  double c2 = (x*x + y*y - L1*L1 - L2*L2)/(2*L1*L2);
-  double s2 = sqrt(1-c2*c2);
-  double th2 = atan2(s2,c2);
-  double th1 = atan2(y,x) - atan2(L1+L2*c2,L2*s2);
-
-  printf("%f , %f\n",th1, th2);
-
-  struct Joint J;
-  J.TH1 = th1;
-  J.TH2 = th2;
-  return J;
-  */
 }
 
 struct End_point Compute_FK(struct Joint J){
@@ -263,8 +207,6 @@ struct End_point Compute_FK(struct Joint J){
   double x = L1*cos(th1) + L2*cos(th1 + th2);
   double y = L1*sin(th1) + L2*sin(th1 + th2);
 
-  //ROS_INFO("th1 : %f , th2 : %f",R2D*th1, R2D*th2);
-
   struct End_point E;
   E.x = x;
   E.y = y;
@@ -272,28 +214,47 @@ struct End_point Compute_FK(struct Joint J){
 }
 
 int radian_to_tick1(double radian){
+  /*
+   * Motor 1 is assembled in the state of 2048.
+   * 90 degrees becomes 2048,
+   * and 0 degrees becomes 1024.
+   * -90 degrees becomes 0.
+   * Therefore, 1024 must be added to the converted tick from radian.
+   */
+
   int tick = radian*(2048/PI);
-  tick = (tick - 1024);
-  if(tick < 0){
-    tick += 4096;
-  }
+  tick = (tick + 1024);
   return tick;
 }
 
 int radian_to_tick2(double radian){
+  /*
+   * Motor 2 is assembled in the 0-tick state.
+   * Therefore, the converted tick value from radians is used without change.
+   */
   int tick = radian*(2048/PI);
-  if(tick < 0){
-    tick += 4096;
-  }
+
   return tick;
 }
 
 double tick_to_radian_1(int tick){
-   double radian = (PI/(double)2048)*(tick+1024);
+
+  /*
+   * Motor 1's 0 degree is 1024 ticks.
+   * So, after subtracting 1024 from ticks,
+   * convert ticks to radians.
+   */
+
+   double radian = (PI/(double)2048)*(tick-1024);
    return radian;
 }
 
 double tick_to_radian_2(int tick){
+
+  /*
+   * 0 degree of motor 2 is 0 tick.
+   * So we convert ticks to radians without change.
+   */
   double radian = (PI/(double)2048)*tick;
   return radian;
 
@@ -316,10 +277,15 @@ void read_dxl_postion(void){
   dxl_comm_result = groupSyncRead.txRxPacket();
   if (dxl_comm_result != COMM_SUCCESS) packetHandler->getTxRxResult(dxl_comm_result);
 
+  usleep(1000);
+
   // Get Dynamixel#1 present position value
   present_dxl1_posi = groupSyncRead.getData(DXL1_ID, ADDR_PRESENT_POSITION, LEN_PRO_PRESENT_POSITION);
   // Get Dynamixel#2 present position value
   present_dxl2_posi = groupSyncRead.getData(DXL2_ID, ADDR_PRESENT_POSITION, LEN_PRO_PRESENT_POSITION);
+
+  ROS_WARN("present_tick : %d, %d",present_dxl1_posi,present_dxl2_posi);
+  ROS_WARN("present_rad : %lf, %lf",tick_to_radian_1(present_dxl1_posi),tick_to_radian_2(present_dxl2_posi));
 
 }
 
@@ -331,7 +297,6 @@ void dxl_add_param(void){
   {
     fprintf(stderr, "[ID:%03d] groupSyncRead addparam failed", DXL1_ID);
   }
-
 
   // Add parameter storage for Dynamixel#2 present position value
   dxl_addparam_result = groupSyncRead.addParam(DXL2_ID);

@@ -12,8 +12,8 @@
 #define DEVICENAME                      "/dev/ttyUSB0"
 #define PROTOCOL_VERSION                2.0
 
-#define DXL1_ID                          3
-#define DXL2_ID                          11
+#define DXL1_ID                         1
+#define DXL2_ID                         2
 #define BAUDRATE                        2000000
 #define ADDR_TORQUE_ENABLE              64
 #define TORQUE_ENABLE                   1
@@ -42,17 +42,13 @@ struct End_point
   double y = 0.0;
 };
 
-
-
 struct Joint
 {
   double TH1 = 0.0;
   double TH2 = 0.0;
 };
 
-
-struct End_point presentXY_fromFK;
-
+//struct End_point presentXY_fromFK;
 
 //functions
 void process(void);
