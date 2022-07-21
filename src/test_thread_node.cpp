@@ -15,7 +15,7 @@ extern bool is_run;
 //Initial position
 //(robot will move to this position when start)
 double init_pose_x = 0.0;
-double init_posi_y = 1.0;
+double init_posi_y = 0.15;
 
 
 double Ep_x = init_pose_x;

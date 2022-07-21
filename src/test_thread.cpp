@@ -143,8 +143,8 @@ void process(void){
 void set_EP_goal(double x, double y){
 
   if(is_running)
-    if(abs(x - target_goal.x > 0.001) || abs(y - target_goal.y) > 0.001){ //different goal
-      ROS_WARN("New goal command recieved");
+    if(abs(x - target_goal.x )> 0.001 || abs(y - target_goal.y) > 0.001){ //different goal
+      ROS_WARN("========================\n New goal command recieved ========================\n");
       present_posi = traj_goal;
       t = 0;
       target_goal.x = x;
@@ -325,6 +325,22 @@ void print_info(void){
   printf("\n");
   printf("time : %d / %d \n",(int)t,(int)T);
   printf("\n");
+  print_time_bar();
   printf("-----------------------------------\n");
 
+}
+
+
+void print_time_bar(void){
+  int num = (int)(40.0*(t/T));
+  int i = 0;
+  printf("[0ms]");
+  for(i=0;i<num;i++){
+    printf(".");
+  }
+  for(i=0;i<40-num;i++){
+    printf(" ");
+  }
+  printf("[%dms]",(int)T);
+  printf("\n");
 }

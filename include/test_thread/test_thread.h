@@ -21,8 +21,8 @@
 #define DEVICENAME                      "/dev/ttyUSB0"
 #define PROTOCOL_VERSION                2.0
 
-#define DXL1_ID                          3
-#define DXL2_ID                          11
+#define DXL1_ID                          1
+#define DXL2_ID                          2
 #define BAUDRATE                        2000000
 #define ADDR_TORQUE_ENABLE              64
 #define TORQUE_ENABLE                   1
@@ -76,6 +76,7 @@ void read_dxl_postion(void);
 
 void set_EP_goal(double x, double y);
 void print_info(void);
+void print_time_bar(void);
 
 
 
