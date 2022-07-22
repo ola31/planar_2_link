@@ -43,8 +43,8 @@ void process(void){
   static struct Joint J_goal;              //joint goal from IK
   present_posi = presentXY_fromFK;
 
-  target_goal.x = 0.0;
-  target_goal.y = 0.15;
+  target_goal.x = 0.12;
+  target_goal.y = 0.1;
 
   if(t<=T){
     traj_goal.x = present_posi.x + (target_goal.x - present_posi.x) * 0.5*(1-cos(PI*(t/T)));
